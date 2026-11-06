@@ -206,6 +206,107 @@ data, clearly labelled as a static demo.
 
 ## 9. Remaining tasks
 
-- Run the staging walkthrough in §7 (live MySQL) before production.
+- ~~Run the staging walkthrough in §7 (live MySQL) before production.~~
+  **Done — see §10 (runtime verification against MariaDB 10.11).**
 - Optional: point the topbar search at `api/medicines-list.php` for
   instant results (currently submits to the medicines page, as before).
+
+## 10. Runtime verification (MariaDB 10.11, live HTTP + SQL assertions)
+
+§7 was written before a database server existed in the build
+environment, so its DB flows were verified by lint + review only.
+This pass ran the **actual application** end-to-end: MariaDB
+10.11.14, a fresh `database/install.php` import into a scratch
+database (48 tables, migrations 001–005 applied), PHP's built-in
+server with `public/` as web root, `APP_DEBUG=true`, and curl
+sessions per role — asserting rendered page content (not just HTTP
+status codes) and post-conditions in SQL after every write. The
+scratch database, its user and the temporary `.env` were deleted
+afterwards; MariaDB was left running for the other products'
+verification passes.
+
+**Schema cross-check:** a database imported from `database.sql`
+alone is column-for-column identical (tables, columns, types) to
+one installed via `install.php` (schema + migrations) — the
+"migrations folded into database.sql" claim in §5 holds exactly.
+
+**Verified working (selection — ~155 assertions, all passing):**
+
+- All 16 public pages render with real content, no fatals.
+- Logins for super admin, owner, pharmacy admin, pharmacist,
+  cashier and inventory manager each land on their correct new
+  tree; anonymous users are redirected to login; a cashier opening
+  the Super Admin tree gets 403; every sensitive admin page
+  (settings, staff, subscription, supplier payments, reports,
+  expenses) 403s for a cashier. The admin *dashboard* itself is
+  visible to the cashier by design — it is gated by the
+  `dashboard.view` permission, which the cashier role is seeded
+  with; every admin page is individually permission-gated.
+- `api/stats.php`: 14 aggregates match hand-computed seed values
+  exactly (12 medicines, stock quantity 2558, inventory value
+  $3,023.70, today's sales $11.50, 1 expired batch, expiring
+  30/60/90 = 0/1/2, low stock = Cetirizine only, 1 pending PO,
+  1 pending transfer, 3 suppliers). All 7 tenant chart series +
+  the Super Admin `platform_revenue` series return real data.
+- JS POS (`api/pos-search.php` / `api/pos-checkout.php`): search
+  flags the expired batch `PCM-OLD`; a checkout naming that batch
+  is refused with 422 "EXPIRED" and writes nothing; a
+  prescription-only medicine without a prescription is refused;
+  a 130-unit FEFO sale ($195.00, split cash $100 + card $95)
+  commits with batch #1 drained 120→0 and batch #2 340→330,
+  matching `sale_items`, `sale_payments` and two `stock_movements`
+  rows with correct running balances.
+- Classic server-side POS (`admin/pos.php`): add ×2 + checkout
+  produces a $1.80 sale, the placeholder payment row is corrected
+  to the grand total, batch stock decrements, printable receipt
+  renders the items.
+- Supplier payments: seeded outstanding for supplier #1 confirmed
+  at $578.00 ($1,078 purchase − $500 paid); recording a $78
+  payment through the UI drops the derived balance to $500.00.
+- Purchase orders: partial receive of PO-DEMO-0001 (40 of 100
+  Cetirizine) creates the purchase row ($24.00, ref
+  `PO:PO-DEMO-0001`), a new batch at the form's prices
+  ($0.60/$2.25), a `purchase` movement, and flips the PO to
+  `partially_received`.
+- Branch transfers: completing the seeded transfer moves 20
+  Paracetamol branch 2 → branch 1 (source batch 150→130,
+  destination batch created at 20) with the expected pair of
+  `transfer` movement rows; status becomes `completed`.
+- Dispensing: pharmacist dispenses pending RX-1001; status,
+  `dispensed_by` (= the pharmacist) and `dispensed_at` are all
+  stamped; a cashier is 403'd from the pharmacist tree.
+- Platform payments: a payment sits in `pending` (tenant's
+  subscription stays `trial`) until a Super Admin verifies it —
+  verification flips payment → `verified` (with timestamp),
+  subscription → `active`, and the linked invoice → `paid`.
+- Registration lifecycle, both modes: with
+  `require_tenant_approval=0` a new pharmacy is instantly active
+  with trial subscription, default MAIN branch and a working
+  email-verification link; with the setting on `1` the tenant is
+  created `pending`, its owner is blocked at login with the
+  approval message, a Super Admin approval flips it to `active`,
+  and the owner can then sign in to the admin dashboard.
+- Full page sweep: all pages of the `super-admin/`, `admin/`,
+  `pharmacist/`, `cashier/`, `inventory/` **and** legacy
+  `superadmin/` trees render without fatals under valid sessions,
+  including detail views (receipt, PO detail, transfer detail,
+  prescription detail) and the token pages without parameters.
+- Zero PHP warnings, notices, deprecations or fatals in the
+  server log across the entire run (PHP 8.5.8 runtime).
+- Final re-check after the run: `php -l` on all **104 PHP files —
+  0 failures**; `node --check` passes on all 4 JS files
+  (`public/assets/js/{main,app,pos}.js`, vercel-demo demo.js).
+
+**Bugs found: none.** Unlike its sibling product, MediStock's
+original build and the upgrade both ran correctly on first live
+contact — no code fixes were required by this pass. Two initial
+test failures were harness artifacts, investigated and cleared:
+a grand-total comparison tripped on JSON number formatting
+(`195` vs `195.0`; the database holds exactly 195.00), and a
+Super Admin "approve" test used an expired test session (the
+action itself was re-run with a valid session and verified in
+SQL).
+
+**Files changed by this verification pass:** only this file
+(`UPGRADE-SUMMARY.md`, §9 note + this §10). No application code,
+schema, seed or demo file was modified.
