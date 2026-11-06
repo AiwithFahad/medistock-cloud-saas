@@ -163,6 +163,19 @@ function is_super_admin(): bool
     return $u !== null && $u['role_key'] === 'super_admin';
 }
 
+/** Landing page (dashboard tree) for a role key — used after sign-in. */
+function role_home(?string $roleKey = null): string
+{
+    $roleKey ??= current_user()['role_key'] ?? '';
+    return match ($roleKey) {
+        'super_admin' => 'super-admin/dashboard.php',
+        'pharmacist' => 'pharmacist/dashboard.php',
+        'cashier' => 'cashier/dashboard.php',
+        'inventory_manager' => 'inventory/dashboard.php',
+        default => 'admin/dashboard.php',
+    };
+}
+
 /** Tenant-aware authorization: does the current user's role hold a permission? */
 function can(string $permission): bool
 {

@@ -110,22 +110,25 @@ Testing walkthrough: `tests/README.md`.
 All demo accounts use the password **`password`** (bcrypt-hashed in the
 seed data — change them before any real production use).
 
-| Role              | Email                  | Lands on            |
-|-------------------|------------------------|---------------------|
-| Super Admin       | `super@medistock.test` | Platform dashboard  |
-| Pharmacy Owner    | `owner@demo.com`       | Pharmacy dashboard  |
-| Pharmacy Admin    | `admin@demo.com`       | Pharmacy dashboard  |
-| Pharmacist        | `pharmacist@demo.com`  | Pharmacy dashboard  |
-| Cashier           | `cashier@demo.com`     | Pharmacy dashboard  |
-| Inventory Manager | `inventory@demo.com`   | Pharmacy dashboard  |
-| Accountant        | `accountant@demo.com`  | Pharmacy dashboard  |
-| Staff             | `staff@demo.com`       | Pharmacy dashboard  |
+| Role              | Email                  | Lands on                    |
+|-------------------|------------------------|-----------------------------|
+| Super Admin       | `super@medistock.test` | `super-admin/dashboard.php` |
+| Pharmacy Owner    | `owner@demo.com`       | `admin/dashboard.php`       |
+| Pharmacy Admin    | `admin@demo.com`       | `admin/dashboard.php`       |
+| Pharmacist        | `pharmacist@demo.com`  | `pharmacist/dashboard.php`  |
+| Cashier           | `cashier@demo.com`     | `cashier/dashboard.php`     |
+| Inventory Manager | `inventory@demo.com`   | `inventory/dashboard.php`   |
+| Accountant        | `accountant@demo.com`  | `admin/dashboard.php`       |
+| Staff             | `staff@demo.com`       | `admin/dashboard.php`       |
 
 Demo tenant: **Demo Pharmacy** (Professional plan) with a second branch,
 12 medicines, 15 batches (including one expired batch `PCM-OLD`, two
 expiring soon, and low-stock Cetirizine), 3 suppliers, 4 customers, a
-received purchase, a completed sale, prescriptions, expenses and a support
-ticket. A second tenant, **CityCare Pharmacy**, is on a free trial.
+received purchase, a completed sale, prescriptions (with line items),
+expenses and a support ticket — plus upgrade demo data: an open purchase
+order, a part-paid supplier balance ($578.00 outstanding on purchase #1)
+and a pending branch transfer. A second tenant, **CityCare Pharmacy**,
+is on a free trial.
 
 Coupon: **`WELCOME10`** — 10% off a plan change.
 
@@ -135,10 +138,14 @@ Coupon: **`WELCOME10`** — 10% off a plan change.
 medistock-cloud-saas/
 ├── app/            Core: bootstrap, Database (PDO), Auth, helpers,
 │                   SubscriptionService, StockService, Crud engine, View layouts
+│   └── partials/   Shared page bodies (transfers, purchase orders)
 ├── config/         app.php, database.php (env-driven)
-├── database/       database.sql (schema + seeds), install.php
-├── public/         Web root: website, auth, admin/ (pharmacy), superadmin/, api/
-│   └── assets/     css, js, images, uploads
+├── database/       database.sql (schema + seeds), install.php,
+│                   migrations/ (numbered, non-destructive upgrades)
+├── public/         Web root: website, auth, api/, and the role dashboards:
+│                   super-admin/ · admin/ · pharmacist/ · cashier/ ·
+│                   inventory/ (+ legacy superadmin/)
+│   └── assets/     css, js (main.js, app.js, pos.js), images, uploads
 ├── docs/           SECURITY.md, API.md, DEPLOYMENT.md
 ├── storage/        logs, uploads, backups
 ├── tests/          Acceptance walkthrough
@@ -146,6 +153,36 @@ medistock-cloud-saas/
 ├── .env.example    Environment template (placeholders only)
 └── composer.json   Autoload map (no runtime dependencies)
 ```
+
+## Upgrade (role dashboards, JS POS, JSON APIs)
+
+The application was upgraded in place — same design, branding and layout —
+with separate role dashboard trees, a shared JavaScript layer and real
+JSON APIs. Highlights (full detail in `UPGRADE-SUMMARY.md`):
+
+- **Role workspaces:** `super-admin/` (platform console), `admin/`
+  (pharmacy management), `pharmacist/` (prescriptions, dispensing
+  records, medicine search), `cashier/` (JS POS, my sales, receipts) and
+  `inventory/` (receiving, transfers, purchase orders, alerts, supplier
+  balances). Sign-in lands each role on its own dashboard; RBAC is
+  enforced server-side on every page.
+- **JavaScript POS** (`cashier/pos.php` + `assets/js/pos.js`): live
+  product/batch search, batch pinning with expiry warnings, split
+  payments and receipts. All totals are recomputed and validated on the
+  server at checkout (`api/pos-checkout.php`) — frontend figures are
+  never trusted.
+- **JSON APIs** (`public/api/`): `stats.php` (KPI aggregates),
+  `charts.php` (Chart.js series), `pos-search.php`, `pos-checkout.php`,
+  `customers.php`, `medicines-list.php` — all tenant-scoped and
+  permission-gated. See `docs/API.md`.
+- **New operations:** purchase orders with partial receiving, purchase
+  returns, supplier payments with derived outstanding balances,
+  inter-branch stock transfers (FEFO, transactional), prescription line
+  items with authorized dispensing records, medicine photos + CSV
+  import/export, and optional Super Admin approval of new pharmacy
+  registrations (`require_tenant_approval` platform setting).
+- **Database:** migrations `001`–`005` in `database/migrations/` (also
+  folded into `database.sql`; `install.php` applies them idempotently).
 
 ## Deployment architecture
 

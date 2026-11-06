@@ -9,7 +9,7 @@
 <link href="assets/css/demo.css" rel="stylesheet">
 </head>
 <body class="admin-body">
-<div class="demo-banner"><i class="bi bi-info-circle"></i> Static POS demo — click medicines to build a sale. Expired stock (batch PCM-OLD) is never listed, exactly like production. <a href="dashboard.html">Back to dashboard</a></div>
+<div class="demo-banner"><i class="bi bi-info-circle"></i> Static POS demo — click medicines to build a sale, pin batches, add discounts and split payments. Expired batches (e.g. PCM-OLD) appear in the batch picker disabled — they can never be sold, exactly like production. <a href="dashboard.html">Back to dashboard</a></div>
 <div class="admin-wrapper">
   <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-brand"><span class="brand-badge"><i class="bi bi-capsule"></i></span> MediStock <span>Cloud</span></div>
@@ -51,18 +51,30 @@
               <thead><tr><th>Item</th><th style="width:84px">Qty</th><th class="text-end">Total</th></tr></thead>
               <tbody id="cartBody"></tbody>
             </table>
+            <div class="d-flex justify-content-between"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
+            <div class="d-flex justify-content-between"><span>Discount</span><span id="cartDiscount">$0.00</span></div>
             <div class="d-flex justify-content-between"><span>Tax (0%)</span><span>$0.00</span></div>
             <div class="d-flex justify-content-between fs-5"><span class="fw-bold">Total</span><strong class="text-emerald" id="cartTotal">$0.00</strong></div>
             <div class="row g-2 mt-2">
-              <div class="col-6"><label class="form-label small">Customer</label><select class="form-select form-select-sm"><option>Walk-in customer</option><option>Ahmed Raza</option><option>Sarah Mitchell</option><option>John Osei</option><option>Fatima Noor</option></select></div>
-              <div class="col-6"><label class="form-label small">Payment method</label><select class="form-select form-select-sm"><option>Cash</option><option>Card</option><option>Mobile money</option><option>Bank transfer</option><option>Split payment</option></select></div>
+              <div class="col-6"><label class="form-label small">Customer</label><select class="form-select form-select-sm" id="posCustomer"><option>Walk-in customer</option><option>Ahmed Raza</option><option>Sarah Mitchell</option><option>John Osei</option><option>Fatima Noor</option></select></div>
+              <div class="col-6"><label class="form-label small">Prescription (for Rx items)</label><select class="form-select form-select-sm" id="posRx"><option value="">None</option><option>RX-1001 — Sarah Mitchell</option><option>RX-1002 — Ahmed Raza</option></select></div>
+            </div>
+            <h6 class="small text-muted mt-3 mb-1">PAYMENTS — SPLIT ALLOWED</h6>
+            <div id="payRows"></div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span id="paySummary" class="small"></span>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="addPayBtn"><i class="bi bi-plus-lg"></i> Add payment</button>
             </div>
             <button class="btn btn-emerald w-100 mt-3" id="checkoutBtn" type="button"><i class="bi bi-check-circle"></i> Complete sale &amp; print receipt</button>
+            <p class="form-text mb-0 mt-2">Demo math runs in your browser — in production the server recomputes every total before the sale is saved.</p>
           </div></div>
           <div class="card shadow-sm mt-3" id="receiptBox" style="display:none"><div class="card-body receipt">
-            <div class="text-center"><strong>MediStock Cloud Pharmacy</strong><br>Demo Pharmacy — Main Branch<br>Invoice: SAL-DEMO-0107<br>Customer: Walk-in</div>
+            <div class="text-center"><strong>MediStock Cloud Pharmacy</strong><br>Demo Pharmacy — Main Branch<br>Invoice: SAL-DEMO-0107<br><span id="receiptCustomer">Customer: Walk-in</span></div>
             <hr>
-            <div class="d-flex justify-content-between"><span>Sale completed (demo)</span><span id="receiptTotal">$0.00</span></div>
+            <div id="receiptItems"></div>
+            <hr>
+            <div class="d-flex justify-content-between fw-bold"><span>Total</span><span id="receiptTotal">$0.00</span></div>
+            <div id="receiptPayments"></div>
             <hr>
             <p class="text-center mb-0">Thank you for shopping at Demo Pharmacy!</p>
             <div class="text-center mt-2 no-print"><button class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Print receipt</button></div>

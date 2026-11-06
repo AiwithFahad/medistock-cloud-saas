@@ -84,9 +84,23 @@
         </div></div></div>
       </div>
 
+      <div class="row g-3 mb-4">
+        <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+          <h6 class="fw-bold text-navy">Monthly revenue — last 6 months</h6>
+          <canvas id="revChart" height="120"></canvas>
+        </div></div></div>
+        <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+          <h6 class="fw-bold text-navy">Expiry statistics — batches by expiry window</h6>
+          <canvas id="expiryChart" height="120"></canvas>
+        </div></div></div>
+      </div>
+
       <div class="card shadow-sm mb-4" id="stock"><div class="card-body">
-        <h6 class="fw-bold text-navy mb-3"><i class="bi bi-boxes text-emerald"></i> Stock overview — batches &amp; FEFO order</h6>
-        <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <h6 class="fw-bold text-navy mb-0"><i class="bi bi-boxes text-emerald"></i> Stock overview — batches &amp; FEFO order</h6>
+          <input class="form-control form-control-sm w-auto" id="stockSearch" placeholder="Live search stock…">
+        </div>
+        <div class="table-responsive"><table class="table table-sm align-middle mb-0" id="stockTable">
           <thead><tr><th>Medicine</th><th>Batch</th><th>Supplier</th><th>Expiry</th><th class="text-end">Qty</th><th class="text-end">Sell price</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td>Paracetamol 500mg</td><td>PCM-2409</td><td>Nova Distributors</td><td><span class="badge bg-warning text-dark">in 55 days</span></td><td class="text-end">120</td><td class="text-end">$1.50</td><td><span class="badge bg-info-subtle text-info-emphasis">FEFO first</span></td></tr>
@@ -119,6 +133,14 @@ new Chart(document.getElementById('salesChart'), {type:'bar',
   data:{labels:['26 Oct','27 Oct','28 Oct','29 Oct','30 Oct','31 Oct','1 Nov','2 Nov','3 Nov','4 Nov','5 Nov','6 Nov','7 Nov','8 Nov'],
         datasets:[{label:'Sales', data:[820,940,760,1120,980,1240,1310,890,1030,1180,1090,1260,1150,1284], backgroundColor:'#059669', borderRadius:5}]},
   options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}});
+new Chart(document.getElementById('revChart'), {type:'line',
+  data:{labels:['Jun','Jul','Aug','Sep','Oct','Nov'],
+        datasets:[{label:'Revenue', data:[12400,13980,15230,16840,18120,18940], borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,.15)', fill:true, tension:.3}]},
+  options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}});
+new Chart(document.getElementById('expiryChart'), {type:'bar',
+  data:{labels:['Expired','≤ 30 days','31–60 days','61–90 days','> 90 days'],
+        datasets:[{label:'Batches', data:[1,1,0,1,12], backgroundColor:['#f43f5e','#f59e0b','#fbbf24','#38bdf8','#059669'], borderRadius:5}]},
+  options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:2}}}}});
 </script>
 </body>
 </html>

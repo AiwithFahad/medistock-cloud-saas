@@ -67,6 +67,38 @@ final class Crud
                     }
                 }
                 $errors = validate($data, $rules);
+
+                // File fields (type=file, e.g. a medicine photo): validate and
+                // store under public/assets/uploads; the DB keeps the path
+                // relative to public/assets (render with asset()). On edit,
+                // the existing file is kept when no new one is uploaded.
+                foreach ($cfg['fields'] as $field => $f) {
+                    if (($f['type'] ?? '') !== 'file') {
+                        continue;
+                    }
+                    $data[$field] = null;
+                    if ($id > 0) {
+                        $cur = $pdo->prepare("SELECT {$field} FROM {$table} WHERE id = ?");
+                        $cur->execute([$id]);
+                        $data[$field] = $cur->fetchColumn() ?: null;
+                    }
+                    if (isset($_FILES[$field]) && ($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                        $ext = strtolower(pathinfo((string)$_FILES[$field]['name'], PATHINFO_EXTENSION));
+                        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+                            $errors[] = 'Only JPG, PNG, GIF or WEBP images are allowed.';
+                        } elseif ((int)$_FILES[$field]['size'] > 2 * 1024 * 1024) {
+                            $errors[] = 'Images must be 2MB or smaller.';
+                        } else {
+                            $name = $field . '-' . bin2hex(random_bytes(8)) . '.' . $ext;
+                            if (move_uploaded_file((string)$_FILES[$field]['tmp_name'], dirname(__DIR__) . '/public/assets/uploads/' . $name)) {
+                                $data[$field] = 'uploads/' . $name;
+                            } else {
+                                $errors[] = 'Image upload failed.';
+                            }
+                        }
+                    }
+                }
+
                 if (isset($cfg['before_save'])) {
                     try {
                         $data = ($cfg['before_save'])($data, $id ?: null);
@@ -146,6 +178,11 @@ final class Crud
                     echo '<textarea class="form-control" name="' . e($field) . '" rows="3">' . e($value) . '</textarea>';
                 } elseif ($type === 'checkbox') {
                     echo '<div class="form-check form-switch mt-2"><input class="form-check-input" type="checkbox" name="' . e($field) . '" value="1"' . ($value ? ' checked' : '') . '></div>';
+                } elseif ($type === 'file') {
+                    if ($value) {
+                        echo '<div class="mb-2"><img src="' . e(asset((string)$value)) . '" alt="" class="img-thumbnail" style="max-height:90px"></div>';
+                    }
+                    echo '<input class="form-control" type="file" name="' . e($field) . '" accept="image/*">';
                 } else {
                     $step = isset($f['step']) ? ' step="' . e($f['step']) . '"' : '';
                     echo '<input class="form-control" type="' . e($type) . '" name="' . e($field) . '" value="' . e($value) . '"' . $step . '>';
@@ -219,7 +256,7 @@ final class Crud
                 }
             }
             echo '<td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="' . e($base) . '?action=edit&id=' . (int)$r['id'] . '"><i class="bi bi-pencil"></i></a> '
-                . '<form method="post" class="d-inline" onsubmit="return confirm(\'Delete this record?\')">'
+                . '<form method="post" class="d-inline" data-confirm="Delete this record? This cannot be undone from the list view.">'
                 . csrf_field() . '<input type="hidden" name="_op" value="delete">'
                 . '<input type="hidden" name="id" value="' . (int)$r['id'] . '">'
                 . '<button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button></form></td></tr>';

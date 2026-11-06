@@ -67,9 +67,15 @@ final class Auth
         if ($user['tenant_id'] !== null) {
             $t = db()->prepare('SELECT status FROM tenants WHERE id = ?');
             $t->execute([$user['tenant_id']]);
-            if ($t->fetchColumn() === 'suspended') {
+            $tenantStatus = $t->fetchColumn();
+            if ($tenantStatus === 'suspended') {
                 self::recordAttempt($email, false);
                 $error = 'This pharmacy account is suspended. Please contact support.';
+                return null;
+            }
+            if ($tenantStatus === 'pending') {
+                self::recordAttempt($email, false);
+                $error = 'This pharmacy registration is awaiting platform approval. You will be able to sign in once it is approved.';
                 return null;
             }
         }
@@ -117,9 +123,15 @@ final class Auth
             }
 
             $trialDays = (int)($GLOBALS['app_config']['trial_days'] ?? 14);
+            // Platform setting: when require_tenant_approval=1, new pharmacies
+            // start as 'pending' and cannot sign in until a Super Admin
+            // approves them (public/super-admin/pharmacies.php). Default off,
+            // so the standard instant-trial flow is unchanged.
+            $approval = $pdo->query("SELECT setting_value FROM platform_settings WHERE setting_key = 'require_tenant_approval'")->fetchColumn();
+            $tenantStatus = $approval === '1' ? 'pending' : 'active';
             $stmt = $pdo->prepare(
                 'INSERT INTO tenants (name, slug, email, phone, license_number, address, city, country, status, trial_ends_at, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, "active", DATE_ADD(NOW(), INTERVAL ' . $trialDays . ' DAY), NOW(), NOW())'
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, "' . $tenantStatus . '", DATE_ADD(NOW(), INTERVAL ' . $trialDays . ' DAY), NOW(), NOW())'
             );
             $stmt->execute([
                 $data['business_name'], $slug, $data['email'], $data['phone'] ?? null,

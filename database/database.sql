@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     city           VARCHAR(100) NULL,
     country        VARCHAR(100) NULL,
     logo_path      VARCHAR(255) NULL,
-    status         ENUM('active','suspended') NOT NULL DEFAULT 'active',
+    status         ENUM('pending','active','suspended') NOT NULL DEFAULT 'active',
     trial_ends_at  DATETIME NULL,
     created_at     TIMESTAMP NULL,
     updated_at     TIMESTAMP NULL,
@@ -383,6 +383,12 @@ CREATE TABLE IF NOT EXISTS medicines (
     dosage_form           VARCHAR(60) NULL,
     unit                  VARCHAR(30) NOT NULL DEFAULT 'tablet',
     rack_location         VARCHAR(60) NULL,
+    photo_path            VARCHAR(255) NULL,
+    manufacturer          VARCHAR(140) NULL,
+    default_supplier_id   INT UNSIGNED NULL,
+    default_purchase_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    default_selling_price  DECIMAL(10,2) NOT NULL DEFAULT 0,
+    status                ENUM('active','inactive') NOT NULL DEFAULT 'active',
     reorder_level         INT NOT NULL DEFAULT 10,
     requires_prescription TINYINT(1) NOT NULL DEFAULT 0,
     description           TEXT NULL,
@@ -393,7 +399,8 @@ CREATE TABLE IF NOT EXISTS medicines (
     INDEX idx_med_barcode (tenant_id, barcode),
     CONSTRAINT fk_med_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE,
     CONSTRAINT fk_med_cat    FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
-    CONSTRAINT fk_med_brand  FOREIGN KEY (brand_id) REFERENCES brands (id) ON DELETE SET NULL
+    CONSTRAINT fk_med_brand  FOREIGN KEY (brand_id) REFERENCES brands (id) ON DELETE SET NULL,
+    CONSTRAINT fk_med_supplier FOREIGN KEY (default_supplier_id) REFERENCES suppliers (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS suppliers (
@@ -425,6 +432,7 @@ CREATE TABLE IF NOT EXISTS batches (
     purchase_price     DECIMAL(10,2) NOT NULL DEFAULT 0,
     selling_price      DECIMAL(10,2) NOT NULL DEFAULT 0,
     quantity           INT NOT NULL DEFAULT 0,
+    quantity_received  INT NOT NULL DEFAULT 0,
     created_at         TIMESTAMP NULL,
     updated_at         TIMESTAMP NULL,
     deleted_at         TIMESTAMP NULL,
@@ -464,13 +472,28 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     hospital            VARCHAR(160) NULL,
     prescribed_at       DATE NOT NULL,
     status              ENUM('pending','dispensed','partially_dispensed','cancelled') NOT NULL DEFAULT 'pending',
+    dispensed_by        INT UNSIGNED NULL,
+    dispensed_at        DATETIME NULL,
     notes               TEXT NULL,
     created_at          TIMESTAMP NULL,
     updated_at          TIMESTAMP NULL,
     deleted_at          TIMESTAMP NULL,
     UNIQUE KEY uq_rx_number (tenant_id, prescription_number),
     CONSTRAINT fk_rx_tenant   FOREIGN KEY (tenant_id)   REFERENCES tenants (id)    ON DELETE CASCADE,
-    CONSTRAINT fk_rx_customer FOREIGN KEY (customer_id) REFERENCES customers (id)  ON DELETE SET NULL
+    CONSTRAINT fk_rx_customer FOREIGN KEY (customer_id) REFERENCES customers (id)  ON DELETE SET NULL,
+    CONSTRAINT fk_rx_dispensed_by FOREIGN KEY (dispensed_by) REFERENCES users (id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS prescription_items (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    prescription_id INT UNSIGNED NOT NULL,
+    medicine_id     INT UNSIGNED NULL,
+    medicine_name   VARCHAR(180) NOT NULL,
+    dosage          VARCHAR(80) NULL,
+    quantity        INT NOT NULL DEFAULT 1,
+    instructions    VARCHAR(255) NULL,
+    CONSTRAINT fk_rxi_rx       FOREIGN KEY (prescription_id) REFERENCES prescriptions (id) ON DELETE CASCADE,
+    CONSTRAINT fk_rxi_medicine FOREIGN KEY (medicine_id)     REFERENCES medicines (id)     ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS purchases (
@@ -629,6 +652,133 @@ CREATE TABLE IF NOT EXISTS stock_movements (
     CONSTRAINT fk_mov_user     FOREIGN KEY (created_by)  REFERENCES users (id)     ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+-- ─────────────────────────── UPGRADE TABLES (migrations 002–004) ─────────
+-- Purchase orders (partial deliveries), purchase returns, supplier
+-- payments (derived outstanding balances) and inter-branch transfers.
+-- Split POS payments need no table: sale_payments stores one row per
+-- payment method/amount, so a split sale is simply multiple rows.
+
+CREATE TABLE IF NOT EXISTS purchase_orders (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id     INT UNSIGNED NOT NULL,
+    branch_id     INT UNSIGNED NOT NULL,
+    supplier_id   INT UNSIGNED NOT NULL,
+    order_number  VARCHAR(40) NOT NULL,
+    status        ENUM('draft','ordered','partially_received','received','cancelled') NOT NULL DEFAULT 'ordered',
+    expected_date DATE NULL,
+    notes         VARCHAR(255) NULL,
+    total_amount  DECIMAL(12,2) NOT NULL DEFAULT 0,
+    ordered_by    INT UNSIGNED NULL,
+    created_at    TIMESTAMP NULL,
+    updated_at    TIMESTAMP NULL,
+    deleted_at    TIMESTAMP NULL,
+    UNIQUE KEY uq_po_number (tenant_id, order_number),
+    INDEX idx_po_tenant (tenant_id, status, created_at),
+    CONSTRAINT fk_po_tenant   FOREIGN KEY (tenant_id)   REFERENCES tenants (id)   ON DELETE CASCADE,
+    CONSTRAINT fk_po_branch   FOREIGN KEY (branch_id)   REFERENCES branches (id)  ON DELETE RESTRICT,
+    CONSTRAINT fk_po_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_po_user     FOREIGN KEY (ordered_by)  REFERENCES users (id)     ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS purchase_order_items (
+    id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    purchase_order_id INT UNSIGNED NOT NULL,
+    medicine_id       INT UNSIGNED NOT NULL,
+    quantity_ordered  INT NOT NULL,
+    quantity_received INT NOT NULL DEFAULT 0,
+    purchase_price    DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total             DECIMAL(12,2) NOT NULL DEFAULT 0,
+    CONSTRAINT fk_poi_order    FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders (id) ON DELETE CASCADE,
+    CONSTRAINT fk_poi_medicine FOREIGN KEY (medicine_id)       REFERENCES medicines (id)       ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS purchase_returns (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id   INT UNSIGNED NOT NULL,
+    branch_id   INT UNSIGNED NOT NULL,
+    purchase_id INT UNSIGNED NOT NULL,
+    supplier_id INT UNSIGNED NOT NULL,
+    total_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    reason      VARCHAR(255) NULL,
+    status      ENUM('completed','cancelled') NOT NULL DEFAULT 'completed',
+    created_by  INT UNSIGNED NULL,
+    created_at  TIMESTAMP NULL,
+    updated_at  TIMESTAMP NULL,
+    INDEX idx_pret_tenant (tenant_id, created_at),
+    CONSTRAINT fk_pret_tenant   FOREIGN KEY (tenant_id)   REFERENCES tenants (id)   ON DELETE CASCADE,
+    CONSTRAINT fk_pret_branch   FOREIGN KEY (branch_id)   REFERENCES branches (id)  ON DELETE RESTRICT,
+    CONSTRAINT fk_pret_purchase FOREIGN KEY (purchase_id) REFERENCES purchases (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_pret_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_pret_user     FOREIGN KEY (created_by)  REFERENCES users (id)     ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS purchase_return_items (
+    id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    purchase_return_id INT UNSIGNED NOT NULL,
+    purchase_item_id   INT UNSIGNED NOT NULL,
+    medicine_id        INT UNSIGNED NOT NULL,
+    batch_id           INT UNSIGNED NULL,
+    quantity           INT NOT NULL,
+    amount             DECIMAL(12,2) NOT NULL DEFAULT 0,
+    CONSTRAINT fk_pri_return   FOREIGN KEY (purchase_return_id) REFERENCES purchase_returns (id) ON DELETE CASCADE,
+    CONSTRAINT fk_pri_pitem    FOREIGN KEY (purchase_item_id)   REFERENCES purchase_items (id)   ON DELETE RESTRICT,
+    CONSTRAINT fk_pri_medicine FOREIGN KEY (medicine_id)        REFERENCES medicines (id)        ON DELETE RESTRICT,
+    CONSTRAINT fk_pri_batch    FOREIGN KEY (batch_id)           REFERENCES batches (id)          ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS supplier_payments (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id   INT UNSIGNED NOT NULL,
+    supplier_id INT UNSIGNED NOT NULL,
+    purchase_id INT UNSIGNED NULL,
+    amount      DECIMAL(12,2) NOT NULL,
+    method      ENUM('cash','card','bank','mobile') NOT NULL DEFAULT 'bank',
+    reference   VARCHAR(100) NULL,
+    paid_at     DATE NOT NULL,
+    notes       VARCHAR(255) NULL,
+    created_by  INT UNSIGNED NULL,
+    created_at  TIMESTAMP NULL,
+    updated_at  TIMESTAMP NULL,
+    INDEX idx_spay_tenant (tenant_id, supplier_id, paid_at),
+    CONSTRAINT fk_spay_tenant   FOREIGN KEY (tenant_id)   REFERENCES tenants (id)   ON DELETE CASCADE,
+    CONSTRAINT fk_spay_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_spay_purchase FOREIGN KEY (purchase_id) REFERENCES purchases (id) ON DELETE SET NULL,
+    CONSTRAINT fk_spay_user     FOREIGN KEY (created_by)  REFERENCES users (id)     ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS stock_transfers (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id       INT UNSIGNED NOT NULL,
+    from_branch_id  INT UNSIGNED NOT NULL,
+    to_branch_id    INT UNSIGNED NOT NULL,
+    transfer_number VARCHAR(40) NOT NULL,
+    status          ENUM('pending','in_transit','completed','cancelled') NOT NULL DEFAULT 'pending',
+    notes           VARCHAR(255) NULL,
+    requested_by    INT UNSIGNED NULL,
+    completed_by    INT UNSIGNED NULL,
+    completed_at    DATETIME NULL,
+    created_at      TIMESTAMP NULL,
+    updated_at      TIMESTAMP NULL,
+    UNIQUE KEY uq_transfer_number (tenant_id, transfer_number),
+    INDEX idx_transfer_tenant (tenant_id, status, created_at),
+    CONSTRAINT fk_tr_tenant FOREIGN KEY (tenant_id)      REFERENCES tenants (id)  ON DELETE CASCADE,
+    CONSTRAINT fk_tr_from   FOREIGN KEY (from_branch_id) REFERENCES branches (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_tr_to     FOREIGN KEY (to_branch_id)   REFERENCES branches (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_tr_req    FOREIGN KEY (requested_by)   REFERENCES users (id)    ON DELETE SET NULL,
+    CONSTRAINT fk_tr_done   FOREIGN KEY (completed_by)   REFERENCES users (id)    ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS stock_transfer_items (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    transfer_id INT UNSIGNED NOT NULL,
+    medicine_id INT UNSIGNED NOT NULL,
+    batch_id    INT UNSIGNED NULL,
+    quantity    INT NOT NULL,
+    CONSTRAINT fk_tri_transfer FOREIGN KEY (transfer_id) REFERENCES stock_transfers (id) ON DELETE CASCADE,
+    CONSTRAINT fk_tri_medicine FOREIGN KEY (medicine_id) REFERENCES medicines (id)       ON DELETE RESTRICT,
+    CONSTRAINT fk_tri_batch    FOREIGN KEY (batch_id)    REFERENCES batches (id)         ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -699,6 +849,7 @@ INSERT INTO platform_settings (setting_key, setting_value, created_at, updated_a
 ('trial_days', '14', NOW(), NOW()),
 ('grace_days', '7', NOW(), NOW()),
 ('maintenance_mode', '0', NOW(), NOW()),
+('require_tenant_approval', '0', NOW(), NOW()),
 ('default_currency', 'USD', NOW(), NOW());
 
 INSERT INTO announcements (title, body, audience, is_published, published_at, created_at, updated_at) VALUES
@@ -796,22 +947,22 @@ INSERT INTO medicines (id, tenant_id, category_id, brand_id, name, generic_name,
 
 -- Batches: note the expired batch (#3), two expiring-soon batches (#1, #11)
 -- and the deliberately low Cetirizine stock (#6) for the alert screens.
-INSERT INTO batches (id, tenant_id, branch_id, medicine_id, supplier_id, batch_number, manufacturing_date, expiry_date, purchase_price, selling_price, quantity, created_at, updated_at) VALUES
-(1,  1, 1, 1,  1, 'PCM-2409', DATE_SUB(CURDATE(), INTERVAL 14 MONTH), DATE_ADD(CURDATE(), INTERVAL 55 DAY),   0.80, 1.50, 120, NOW(), NOW()),
-(2,  1, 1, 1,  1, 'PCM-2501', DATE_SUB(CURDATE(), INTERVAL 2 MONTH),  DATE_ADD(CURDATE(), INTERVAL 16 MONTH), 0.85, 1.50, 340, NOW(), NOW()),
-(3,  1, 1, 1,  2, 'PCM-OLD',  DATE_SUB(CURDATE(), INTERVAL 26 MONTH), DATE_SUB(CURDATE(), INTERVAL 45 DAY),   0.75, 1.50, 40,  NOW(), NOW()),
-(4,  1, 1, 2,  3, 'IBU-118',  DATE_SUB(CURDATE(), INTERVAL 4 MONTH),  DATE_ADD(CURDATE(), INTERVAL 14 MONTH), 1.90, 4.20, 210, NOW(), NOW()),
-(5,  1, 1, 3,  1, 'AMX-118',  DATE_SUB(CURDATE(), INTERVAL 3 MONTH),  DATE_ADD(CURDATE(), INTERVAL 8 MONTH),  2.60, 5.00, 150, NOW(), NOW()),
-(6,  1, 1, 4,  2, 'CET-077',  DATE_SUB(CURDATE(), INTERVAL 5 MONTH),  DATE_ADD(CURDATE(), INTERVAL 10 MONTH), 0.60, 2.25, 5,   NOW(), NOW()),
-(7,  1, 1, 5,  2, 'VIT-310',  DATE_SUB(CURDATE(), INTERVAL 6 MONTH),  DATE_ADD(CURDATE(), INTERVAL 20 MONTH), 4.10, 8.50, 96,  NOW(), NOW()),
-(8,  1, 1, 6,  3, 'OMP-204',  DATE_SUB(CURDATE(), INTERVAL 4 MONTH),  DATE_ADD(CURDATE(), INTERVAL 12 MONTH), 1.40, 3.75, 180, NOW(), NOW()),
-(9,  1, 1, 7,  1, 'MET-512',  DATE_SUB(CURDATE(), INTERVAL 5 MONTH),  DATE_ADD(CURDATE(), INTERVAL 15 MONTH), 0.95, 2.80, 260, NOW(), NOW()),
-(10, 1, 1, 8,  3, 'AZI-090',  DATE_SUB(CURDATE(), INTERVAL 6 MONTH),  DATE_ADD(CURDATE(), INTERVAL 6 MONTH),  3.80, 7.50, 75,  NOW(), NOW()),
-(11, 1, 1, 9,  2, 'AMB-033',  DATE_SUB(CURDATE(), INTERVAL 10 MONTH), DATE_ADD(CURDATE(), INTERVAL 80 DAY),   2.20, 4.95, 48,  NOW(), NOW()),
-(12, 1, 1, 10, 1, 'ORS-611',  DATE_SUB(CURDATE(), INTERVAL 4 MONTH),  DATE_ADD(CURDATE(), INTERVAL 24 MONTH), 0.30, 0.90, 500, NOW(), NOW()),
-(13, 1, 1, 11, 2, 'ANT-145',  DATE_SUB(CURDATE(), INTERVAL 7 MONTH),  DATE_ADD(CURDATE(), INTERVAL 11 MONTH), 1.75, 3.95, 64,  NOW(), NOW()),
-(14, 1, 1, 12, 1, 'ASP-208',  DATE_SUB(CURDATE(), INTERVAL 3 MONTH),  DATE_ADD(CURDATE(), INTERVAL 18 MONTH), 0.45, 1.20, 320, NOW(), NOW()),
-(15, 1, 2, 1,  1, 'PCM-2502', DATE_SUB(CURDATE(), INTERVAL 2 MONTH),  DATE_ADD(CURDATE(), INTERVAL 16 MONTH), 0.85, 1.50, 150, NOW(), NOW());
+INSERT INTO batches (id, tenant_id, branch_id, medicine_id, supplier_id, batch_number, manufacturing_date, expiry_date, purchase_price, selling_price, quantity, quantity_received, created_at, updated_at) VALUES
+(1,  1, 1, 1,  1, 'PCM-2409', DATE_SUB(CURDATE(), INTERVAL 14 MONTH), DATE_ADD(CURDATE(), INTERVAL 55 DAY),   0.80, 1.50, 120, 120, NOW(), NOW()),
+(2,  1, 1, 1,  1, 'PCM-2501', DATE_SUB(CURDATE(), INTERVAL 2 MONTH),  DATE_ADD(CURDATE(), INTERVAL 16 MONTH), 0.85, 1.50, 340, 340, NOW(), NOW()),
+(3,  1, 1, 1,  2, 'PCM-OLD',  DATE_SUB(CURDATE(), INTERVAL 26 MONTH), DATE_SUB(CURDATE(), INTERVAL 45 DAY),   0.75, 1.50, 40,  40,  NOW(), NOW()),
+(4,  1, 1, 2,  3, 'IBU-118',  DATE_SUB(CURDATE(), INTERVAL 4 MONTH),  DATE_ADD(CURDATE(), INTERVAL 14 MONTH), 1.90, 4.20, 210, 210, NOW(), NOW()),
+(5,  1, 1, 3,  1, 'AMX-118',  DATE_SUB(CURDATE(), INTERVAL 3 MONTH),  DATE_ADD(CURDATE(), INTERVAL 8 MONTH),  2.60, 5.00, 150, 150, NOW(), NOW()),
+(6,  1, 1, 4,  2, 'CET-077',  DATE_SUB(CURDATE(), INTERVAL 5 MONTH),  DATE_ADD(CURDATE(), INTERVAL 10 MONTH), 0.60, 2.25, 5,   100, NOW(), NOW()),
+(7,  1, 1, 5,  2, 'VIT-310',  DATE_SUB(CURDATE(), INTERVAL 6 MONTH),  DATE_ADD(CURDATE(), INTERVAL 20 MONTH), 4.10, 8.50, 96,  96,  NOW(), NOW()),
+(8,  1, 1, 6,  3, 'OMP-204',  DATE_SUB(CURDATE(), INTERVAL 4 MONTH),  DATE_ADD(CURDATE(), INTERVAL 12 MONTH), 1.40, 3.75, 180, 180, NOW(), NOW()),
+(9,  1, 1, 7,  1, 'MET-512',  DATE_SUB(CURDATE(), INTERVAL 5 MONTH),  DATE_ADD(CURDATE(), INTERVAL 15 MONTH), 0.95, 2.80, 260, 260, NOW(), NOW()),
+(10, 1, 1, 8,  3, 'AZI-090',  DATE_SUB(CURDATE(), INTERVAL 6 MONTH),  DATE_ADD(CURDATE(), INTERVAL 6 MONTH),  3.80, 7.50, 75,  75,  NOW(), NOW()),
+(11, 1, 1, 9,  2, 'AMB-033',  DATE_SUB(CURDATE(), INTERVAL 10 MONTH), DATE_ADD(CURDATE(), INTERVAL 80 DAY),   2.20, 4.95, 48,  48,  NOW(), NOW()),
+(12, 1, 1, 10, 1, 'ORS-611',  DATE_SUB(CURDATE(), INTERVAL 4 MONTH),  DATE_ADD(CURDATE(), INTERVAL 24 MONTH), 0.30, 0.90, 500, 500, NOW(), NOW()),
+(13, 1, 1, 11, 2, 'ANT-145',  DATE_SUB(CURDATE(), INTERVAL 7 MONTH),  DATE_ADD(CURDATE(), INTERVAL 11 MONTH), 1.75, 3.95, 64,  64,  NOW(), NOW()),
+(14, 1, 1, 12, 1, 'ASP-208',  DATE_SUB(CURDATE(), INTERVAL 3 MONTH),  DATE_ADD(CURDATE(), INTERVAL 18 MONTH), 0.45, 1.20, 320, 320, NOW(), NOW()),
+(15, 1, 2, 1,  1, 'PCM-2502', DATE_SUB(CURDATE(), INTERVAL 2 MONTH),  DATE_ADD(CURDATE(), INTERVAL 16 MONTH), 0.85, 1.50, 150, 150, NOW(), NOW());
 
 INSERT INTO customers (id, tenant_id, name, phone, email, gender, date_of_birth, created_at, updated_at) VALUES
 (1, 1, 'Ahmed Raza',     '+1 555 300 1101', 'ahmed.raza@example.com',  'male',   '1988-04-12', NOW(), NOW()),
@@ -861,9 +1012,33 @@ INSERT INTO expenses (tenant_id, branch_id, title, category, amount, expense_dat
 (1, 1, 'Monthly rent — Main Branch', 'Rent', 450.00, CURDATE(), 'bank', 7, NOW(), NOW()),
 (1, 1, 'Electricity bill', 'Utilities', 86.50, CURDATE(), 'bank', 7, NOW(), NOW());
 
-INSERT INTO prescriptions (tenant_id, customer_id, prescription_number, patient_name, doctor_name, hospital, prescribed_at, status, created_at, updated_at) VALUES
-(1, 2, 'RX-1001', 'Sarah Mitchell', 'Dr. Emily Carter', 'CityCare Hospital', DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'pending', NOW(), NOW()),
-(1, 1, 'RX-1002', 'Ahmed Raza', 'Dr. Imran Sheikh', 'Springfield Clinic', DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'dispensed', NOW(), NOW());
+INSERT INTO prescriptions (tenant_id, customer_id, prescription_number, patient_name, doctor_name, hospital, prescribed_at, status, dispensed_by, dispensed_at, created_at, updated_at) VALUES
+(1, 2, 'RX-1001', 'Sarah Mitchell', 'Dr. Emily Carter', 'CityCare Hospital', DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'pending', NULL, NULL, NOW(), NOW()),
+(1, 1, 'RX-1002', 'Ahmed Raza', 'Dr. Imran Sheikh', 'Springfield Clinic', DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'dispensed', 4, DATE_SUB(NOW(), INTERVAL 5 DAY), NOW(), NOW());
+
+INSERT INTO prescription_items (prescription_id, medicine_id, medicine_name, dosage, quantity, instructions) VALUES
+(1, 3, 'Amoxicillin 250mg', '1 capsule three times daily', 21, 'Complete the full course.'),
+(1, 1, 'Paracetamol 500mg', '1 tablet every 6 hours if fever', 10, 'Maximum 4 tablets per day.'),
+(2, 7, 'Metformin 500mg', '1 tablet twice daily with meals', 30, 'Monitor blood sugar.');
+
+-- Upgrade demo data: one open purchase order (restock for the low Cetirizine
+-- stock), one supplier payment against purchase #1 (leaves a real
+-- outstanding balance), and one pending branch transfer.
+INSERT INTO purchase_orders (id, tenant_id, branch_id, supplier_id, order_number, status, expected_date, notes, total_amount, ordered_by, created_at, updated_at) VALUES
+(1, 1, 1, 2, 'PO-DEMO-0001', 'ordered', DATE_ADD(CURDATE(), INTERVAL 3 DAY), 'Restock low-selling-out items.', 265.00, 6, NOW(), NOW());
+
+INSERT INTO purchase_order_items (purchase_order_id, medicine_id, quantity_ordered, quantity_received, purchase_price, total) VALUES
+(1, 4, 100, 0, 0.60, 60.00),
+(1, 5, 50, 0, 4.10, 205.00);
+
+INSERT INTO supplier_payments (tenant_id, supplier_id, purchase_id, amount, method, reference, paid_at, notes, created_by, created_at, updated_at) VALUES
+(1, 1, 1, 500.00, 'bank', 'BANK-TRX-DEMO-1', DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'Part payment for SUP-INV-9918.', 3, NOW(), NOW());
+
+INSERT INTO stock_transfers (id, tenant_id, from_branch_id, to_branch_id, transfer_number, status, notes, requested_by, created_at, updated_at) VALUES
+(1, 1, 2, 1, 'TRF-DEMO-0001', 'pending', 'Rebalance Paracetamol to the main branch.', 6, NOW(), NOW());
+
+INSERT INTO stock_transfer_items (transfer_id, medicine_id, quantity) VALUES
+(1, 1, 20);
 
 INSERT INTO support_tickets (tenant_id, user_id, subject, message, priority, status, created_at, updated_at) VALUES
 (1, 3, 'Barcode scanner setup', 'Which USB barcode scanners are supported by the POS? We want one that works with the medicine barcode field out of the box.', 'medium', 'open', NOW(), NOW());

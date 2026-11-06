@@ -159,3 +159,24 @@ body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neu
   .admin-sidebar, .admin-topbar, .admin-footer, .no-print { display: none !important; }
   .admin-content { padding: 0; }
 }
+
+/* ── Upgrade additions (JS POS, AJAX charts, expiry + print views) ───────
+   Appended only — existing rules, palette and layouts are untouched. */
+.chart-box { position: relative; height: 260px; }
+.chart-box-sm { position: relative; height: 200px; }
+.pos-results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .6rem; }
+.pos-results-grid .pos-product { cursor: default; }
+#posPrintArea { display: none; }
+.text-warning-emphasis { color: #b45309; }
+.kv-row { display: flex; justify-content: space-between; padding: .3rem 0; border-bottom: 1px dashed #e2e8f0; font-size: .9rem; }
+.kv-row:last-child { border-bottom: 0; }
+.thumb-sm { width: 38px; height: 38px; object-fit: cover; border-radius: 8px; border: 1px solid #e6efec; }
+@media print {
+  /* Receipt printing from the JS POS: only the receipt is printed. */
+  body.receipt-printing > *:not(#posPrintArea) { display: none !important; }
+  body.receipt-printing #posPrintArea { display: block !important; max-width: 340px; margin: 0 auto; }
+  /* Printable invoice/report views use .print-sheet as the only output. */
+  body.sheet-printing .admin-wrapper, body.sheet-printing .toast-container, body.sheet-printing .modal { display: none !important; }
+  body.sheet-printing #printSheet { display: block !important; }
+}
+#printSheet { display: none; }

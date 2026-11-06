@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../app/bootstrap.php';
 
 if (current_user()) {
-    redirect(is_super_admin() ? 'superadmin/index.php' : 'admin/index.php');
+    redirect(role_home());
 }
 
 $error = null;
@@ -11,7 +11,7 @@ if (is_post()) {
     $user = Auth::attempt((string)input('email', ''), (string)input('password', ''), $error);
     if ($user) {
         flash('success', 'Welcome back, ' . $user['name'] . '.');
-        redirect($user['role_key'] === 'super_admin' ? 'superadmin/index.php' : 'admin/index.php');
+        redirect(role_home($user['role_key']));
     }
 }
 

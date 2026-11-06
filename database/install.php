@@ -9,6 +9,12 @@
  * which contains the full schema + demo seeds. Safe to run once on a fresh
  * database; re-running on an existing database will fail on duplicate seeds.
  *
+ * After the import it also applies every file in database/migrations/
+ * (numbered, non-destructive). Migration statements that fail only because
+ * the object already exists (duplicate column/table/key — expected on a
+ * fresh install, where database.sql already contains the migrated schema)
+ * are skipped; any other migration error aborts the install.
+ *
  * Web access is refused unless APP_DEBUG=true and a ?key matches
  * INSTALL_KEY from the environment — delete or protect this file in
  * production.
@@ -65,6 +71,37 @@ try {
         $pdo->exec($statement);
         $count++;
     }
+    // Apply numbered migrations (idempotent on fresh installs: "already
+    // exists" errors are ignored, everything else is fatal).
+    $migrationFiles = glob(__DIR__ . '/migrations/*.sql') ?: [];
+    sort($migrationFiles);
+    $migApplied = 0;
+    $migSkipped = 0;
+    foreach ($migrationFiles as $file) {
+        $migSql = (string)file_get_contents($file);
+        foreach (array_filter(array_map('trim', preg_split('/;\s*\n/', $migSql))) as $statement) {
+            $meaningful = preg_replace('/^\s*--.*$/m', '', $statement);
+            if (trim((string)$meaningful) === '') {
+                continue;
+            }
+            try {
+                $pdo->exec($statement);
+                $migApplied++;
+            } catch (PDOException $ex) {
+                // 1050 table exists · 1060 duplicate column · 1061 duplicate
+                // key · 1068 multiple primary key · 1826 duplicate FK name.
+                if (in_array((int)($ex->errorInfo[1] ?? 0), [1050, 1060, 1061, 1068, 1826], true)) {
+                    $migSkipped++;
+                    continue;
+                }
+                throw $ex;
+            }
+        }
+    }
+    if ($migrationFiles) {
+        echo 'Migrations: ' . count($migrationFiles) . " files checked, {$migApplied} statements applied, {$migSkipped} already present.\n";
+    }
+
     $tables = (int)$pdo->query('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()')->fetchColumn();
     echo "MediStock Cloud installed: {$count} statements executed, {$tables} tables present in `{$dbName}`.\n";
     echo "Demo logins (password: password):\n";

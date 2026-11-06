@@ -117,25 +117,31 @@ function site_footer(): void
 function admin_menu(): array
 {
     if (is_super_admin()) {
+        // Platform console: the super-admin/ tree is the primary console;
+        // the remaining platform modules stay linked below it.
         return [
-            ['superadmin/index.php', 'bi-speedometer2', 'Dashboard', null],
-            ['superadmin/tenants.php', 'bi-building', 'Pharmacies (Tenants)', null],
-            ['superadmin/plans.php', 'bi-layers', 'Plans', null],
+            ['super-admin/dashboard.php', 'bi-speedometer2', 'Dashboard', null],
+            ['super-admin/pharmacies.php', 'bi-building', 'Pharmacies', null],
+            ['super-admin/users.php', 'bi-people', 'Users', null],
+            ['super-admin/plans.php', 'bi-layers', 'Plans', null],
+            ['super-admin/subscriptions.php', 'bi-arrow-repeat', 'Subscriptions', null],
+            ['super-admin/payments.php', 'bi-credit-card', 'Payments', null],
+            ['super-admin/reports.php', 'bi-graph-up-arrow', 'Reports', null],
+            ['super-admin/settings.php', 'bi-gear', 'Platform Settings', null],
             ['superadmin/coupons.php', 'bi-ticket-perforated', 'Coupons', null],
-            ['superadmin/users.php', 'bi-people', 'Users', null],
-            ['superadmin/payments.php', 'bi-credit-card', 'Payments', null],
             ['superadmin/invoices.php', 'bi-receipt', 'Invoices', null],
-            ['superadmin/analytics.php', 'bi-graph-up-arrow', 'Analytics', null],
+            ['superadmin/analytics.php', 'bi-bar-chart', 'Analytics (legacy)', null],
             ['superadmin/tickets.php', 'bi-life-preserver', 'Support Tickets', null],
             ['superadmin/announcements.php', 'bi-megaphone', 'Announcements', null],
-            ['superadmin/settings.php', 'bi-gear', 'Platform Settings', null],
             ['superadmin/logs.php', 'bi-clock-history', 'Activity Logs', null],
         ];
     }
     // Tenant (pharmacy) menu — each item gated by its RBAC permission.
+    $role = current_user()['role_key'] ?? '';
+    $posHref = in_array($role, ['cashier', 'pharmacist'], true) ? 'cashier/pos.php' : 'admin/pos.php';
     $items = [
-        ['admin/index.php', 'bi-speedometer2', 'Overview', 'dashboard.view'],
-        ['admin/pos.php', 'bi-upc-scan', 'Pharmacy POS', 'pos.access'],
+        ['admin/dashboard.php', 'bi-speedometer2', 'Overview', 'dashboard.view'],
+        [$posHref, 'bi-upc-scan', 'Pharmacy POS', 'pos.access'],
         ['admin/sales.php', 'bi-cart-check', 'Sales', 'sales.view'],
         ['admin/returns.php', 'bi-arrow-counterclockwise', 'Sales Returns', 'sales.manage'],
         ['admin/medicines.php', 'bi-capsule', 'Medicines', 'medicines.view'],
@@ -144,11 +150,14 @@ function admin_menu(): array
         ['admin/batches.php', 'bi-box-seam', 'Batches', 'stock.view'],
         ['admin/inventory.php', 'bi-boxes', 'Inventory', 'stock.view'],
         ['admin/adjustments.php', 'bi-sliders', 'Stock Adjustments', 'stock.adjust'],
-        ['admin/movements.php', 'bi-arrow-left-right', 'Stock Movements', 'stock.view'],
+        ['admin/movements.php', 'bi-arrow-repeat', 'Stock Movements', 'stock.view'],
+        ['admin/transfers.php', 'bi-arrow-left-right', 'Branch Transfers', 'stock.view'],
         ['admin/expiry.php', 'bi-calendar-x', 'Expiry Management', 'stock.view'],
         ['admin/lowstock.php', 'bi-exclamation-triangle', 'Low Stock Alerts', 'stock.view'],
         ['admin/purchases.php', 'bi-bag-plus', 'Purchases', 'purchases.manage'],
+        ['admin/purchase-orders.php', 'bi-clipboard2-check', 'Purchase Orders', 'purchases.manage'],
         ['admin/suppliers.php', 'bi-truck', 'Suppliers', 'suppliers.manage'],
+        ['admin/supplier-payments.php', 'bi-cash-coin', 'Supplier Payments', 'purchases.manage'],
         ['admin/customers.php', 'bi-person-heart', 'Customers', 'customers.manage'],
         ['admin/prescriptions.php', 'bi-file-earmark-medical', 'Prescriptions', 'prescriptions.manage'],
         ['admin/expenses.php', 'bi-wallet2', 'Expenses', 'expenses.manage'],
@@ -158,7 +167,33 @@ function admin_menu(): array
         ['admin/subscription.php', 'bi-stars', 'Subscription', 'billing.manage'],
         ['admin/settings.php', 'bi-gear', 'Settings', 'settings.manage'],
     ];
-    return array_values(array_filter($items, static fn($i) => $i[3] === null || can($i[3])));
+    $items = array_values(array_filter($items, static fn($i) => $i[3] === null || can($i[3])));
+
+    // Role workspaces come first in the navigation for the roles that have
+    // a dedicated dashboard tree (server-side RBAC still applies per page).
+    $roleItems = match ($role) {
+        'pharmacist' => [
+            ['pharmacist/dashboard.php', 'bi-clipboard2-pulse', 'Pharmacist Home', null],
+            ['pharmacist/prescriptions.php', 'bi-file-earmark-medical', 'My Prescriptions', null],
+            ['pharmacist/medicines.php', 'bi-search-heart', 'Medicine Search', null],
+            ['pharmacist/dispensing.php', 'bi-clipboard-check', 'Dispensing Records', null],
+            ['pharmacist/sales.php', 'bi-receipt', 'Sales History', null],
+        ],
+        'cashier' => [
+            ['cashier/dashboard.php', 'bi-cash-register', 'Cashier Home', null],
+            ['cashier/sales.php', 'bi-receipt', 'My Sales', null],
+        ],
+        'inventory_manager' => [
+            ['inventory/dashboard.php', 'bi-boxes', 'Inventory Home', null],
+            ['inventory/receiving.php', 'bi-box-arrow-in-down', 'Stock Receiving', null],
+            ['inventory/transfers.php', 'bi-arrow-left-right', 'Branch Transfers', null],
+            ['inventory/purchase-orders.php', 'bi-clipboard2-check', 'Purchase Orders', null],
+            ['inventory/alerts.php', 'bi-bell', 'Stock Alerts', null],
+            ['inventory/suppliers.php', 'bi-truck', 'Suppliers', null],
+        ],
+        default => [],
+    };
+    return array_merge($roleItems, $items);
 }
 
 function admin_header(string $title, string $active = ''): void
@@ -246,13 +281,37 @@ function admin_header(string $title, string $active = ''): void
 
 function admin_footer(): void
 {
+    $extraJs = $GLOBALS['extra_js'] ?? [];
     ?>
     </main>
     <footer class="admin-footer">MediStock Cloud © <?= date('Y') ?> · Built with Core PHP 8, MySQL & Bootstrap 5</footer>
   </div>
 </div>
+<!-- Shared JS layer mounts: toast notifications + confirm dialog (app.js) -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="msToasts" style="z-index:1090"></div>
+<div class="modal fade" id="msConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="d-flex gap-3 align-items-start">
+          <span class="stat-icon stat-rose flex-shrink-0" style="width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center"><i class="bi bi-exclamation-triangle"></i></span>
+          <div><h6 class="mb-1">Please confirm</h6><p class="small text-muted mb-0" id="msConfirmText">Are you sure?</p></div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-ms-confirm="no">Cancel</button>
+        <button type="button" class="btn btn-sm btn-danger" data-ms-confirm="yes">Yes, continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>window.MS_CSRF = <?= json_encode(csrf_token()) ?>;</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= asset('js/main.js') ?>"></script>
+<script src="<?= asset('js/app.js') ?>"></script>
+<?php foreach ($extraJs as $js): ?>
+<script src="<?= asset($js) ?>"></script>
+<?php endforeach; ?>
 </body>
 </html>
 <?php
