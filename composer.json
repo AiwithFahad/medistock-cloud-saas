@@ -1,0 +1,1 @@
+{"autoload":{"classmap":["app/"]},"description":"MediStock Cloud — multi-tenant Pharmacy Management SaaS built with Core PHP 8, MySQL, Bootstrap 5 and Chart.js. No framework required at runtime.","license":"MIT","name":"medistock/medistock-cloud-saas","require":{"ext-json":"*","ext-mbstring":"*","ext-pdo":"*","ext-pdo_mysql":"*","php":">=8.0"},"type":"project"}

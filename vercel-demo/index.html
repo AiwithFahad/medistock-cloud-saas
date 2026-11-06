@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MediStock Cloud — Pharmacy Management SaaS (Live Demo)</title>
+<meta name="description" content="MediStock Cloud live demo: batch inventory, FEFO selling, expiry control and a fast pharmacy POS.">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="assets/css/demo.css" rel="stylesheet">
+</head>
+<body>
+<div class="demo-banner"><i class="bi bi-info-circle"></i> You are viewing the <strong>static demo</strong> of MediStock Cloud. The full application runs on Core PHP 8 + MySQL — <a href="dashboard.html">open the dashboard demo</a> or <a href="pos.html">try the POS</a>.</div>
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <div class="container">
+    <a class="navbar-brand brand" href="index.html"><span class="brand-badge"><i class="bi bi-capsule"></i></span> MediStock <span class="text-emerald">Cloud</span></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav mx-auto">
+        <li class="nav-item"><a class="nav-link active fw-semibold text-emerald" href="index.html">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+        <li class="nav-item"><a class="nav-link" href="#pricing">Pricing</a></li>
+        <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="pos.html">POS</a></li>
+      </ul>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-emerald" href="dashboard.html">Sign in (demo)</a>
+        <a class="btn btn-emerald" href="#pricing">Start Free Trial</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="badge bg-success-subtle text-emerald border px-3 py-2 mb-3"><i class="bi bi-stars"></i> Multi-tenant Pharmacy SaaS</span>
+        <h1 class="display-5">Run your pharmacy on <span class="accent">MediStock Cloud</span></h1>
+        <p class="lead mt-3">Batch-level inventory, FEFO selling, expiry control, a lightning-fast POS and complete purchase &amp; supplier management — one secure cloud platform for independent pharmacies, medical stores, chains and distributors.</p>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <a class="btn btn-emerald btn-lg" href="dashboard.html">Open the live demo <i class="bi bi-arrow-right"></i></a>
+          <a class="btn btn-outline-emerald btn-lg" href="pos.html"><i class="bi bi-upc-scan"></i> Try the POS</a>
+        </div>
+        <div class="d-flex gap-4 mt-4 text-muted small">
+          <span><i class="bi bi-check-circle-fill text-emerald"></i> 14-day free trial</span>
+          <span><i class="bi bi-check-circle-fill text-emerald"></i> No card required</span>
+          <span><i class="bi bi-check-circle-fill text-emerald"></i> Cancel anytime</span>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="mock-window">
+          <div class="mock-bar"><span class="dot"></span><span class="dot" style="background:#fbbf24"></span><span class="dot" style="background:#f87171"></span><span class="ms-2">MediStock Cloud — Pharmacy Dashboard</span></div>
+          <div class="mock-body">
+            <div class="mock-side"><span class="on"></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="mock-main">
+              <div class="mock-kpis">
+                <div class="mock-kpi"><small>Medicines</small><b>12</b></div>
+                <div class="mock-kpi"><small>Units in stock</small><b>2,558</b></div>
+                <div class="mock-kpi"><small>Expiring ≤90d</small><b>2 batches</b></div>
+                <div class="mock-kpi"><small>Low stock</small><b>1 medicine</b></div>
+              </div>
+              <div class="mock-bars"><i style="height:45%"></i><i style="height:65%"></i><i style="height:52%"></i><i style="height:78%"></i><i style="height:60%"></i><i style="height:88%"></i><i style="height:70%"></i><i style="height:95%"></i><i style="height:66%"></i><i style="height:82%"></i></div>
+              <div class="d-flex gap-2 mt-2">
+                <span class="badge bg-danger-subtle text-danger">Expired batch blocked from sale</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis">Expiry alerts on</span>
+                <span class="badge bg-success-subtle text-success">FEFO selling</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-4 border-bottom">
+  <div class="container text-center">
+    <p class="text-muted small text-uppercase fw-semibold mb-3">Trusted by pharmacies &amp; healthcare partners</p>
+    <div class="d-flex justify-content-around flex-wrap gap-3 fs-5 text-muted fw-bold">
+      <span><i class="bi bi-hospital"></i> CityCare Pharmacy</span><span><i class="bi bi-heart-pulse"></i> HealthPlus</span>
+      <span><i class="bi bi-capsule-pill"></i> MediPoint</span><span><i class="bi bi-bandaid"></i> CareWell Stores</span>
+      <span><i class="bi bi-shop"></i> GreenCross Medical</span>
+    </div>
+  </div>
+</section>
+
+<section class="section-pad" id="features">
+  <div class="container">
+    <div class="text-center mb-5"><h2 class="fw-bold text-navy">Everything a modern pharmacy needs</h2><p class="text-muted">Nine role-based portals, one database, zero spreadsheets.</p></div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-boxes"></i></div><h5 class="text-navy">Batch-Level Inventory</h5><p class="text-muted mb-0">Every batch tracks number, manufacturing &amp; expiry dates, purchase &amp; selling price, quantity and supplier.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-arrow-repeat"></i></div><h5 class="text-navy">FEFO Selling</h5><p class="text-muted mb-0">First-Expiry-First-Out suggestions at the till, so the stock closest to expiry always sells first.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-shield-check"></i></div><h5 class="text-navy">Expiry Protection</h5><p class="text-muted mb-0">Expired stock is blocked from sale automatically. Expiry dashboards and alerts keep you ahead of write-offs.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-upc-scan"></i></div><h5 class="text-navy">Fast Pharmacy POS</h5><p class="text-muted mb-0">Barcode search, batch selection, discounts, taxes, split payments, invoices and thermal receipts.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-truck"></i></div><h5 class="text-navy">Purchases &amp; Suppliers</h5><p class="text-muted mb-0">Receive stock against suppliers with automatic batch creation and a full stock-movement audit trail.</p></div></div>
+      <div class="col-md-6 col-lg-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-stars"></i></div><h5 class="text-navy">Subscriptions Built-In</h5><p class="text-muted mb-0">Trials, plans, coupons, invoices and plan limits for branches, staff, medicines and transactions.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section-pad section-alt">
+  <div class="container">
+    <div class="text-center mb-5"><h2 class="fw-bold text-navy">Never lose money to expired or missing stock</h2></div>
+    <div class="row g-4">
+      <div class="col-lg-6"><div class="alert-strip danger h-100"><i class="bi bi-calendar-x fs-3 text-danger"></i><div><h5 class="text-navy">Expiry tracking</h5><p class="text-muted mb-2">Batches expiring within 90 days surface automatically. Expired batches are locked out of the POS — they cannot be sold, even by mistake.</p><span class="badge bg-danger">Demo: 1 expired batch</span> <span class="badge bg-warning text-dark">2 expiring ≤ 90 days</span></div></div></div>
+      <div class="col-lg-6"><div class="alert-strip warning h-100"><i class="bi bi-exclamation-triangle fs-3 text-warning"></i><div><h5 class="text-navy">Low-stock alerts</h5><p class="text-muted mb-2">Per-medicine reorder levels trigger alerts the moment stock runs thin, with one-click purchase creation to your regular supplier.</p><span class="badge bg-warning text-dark">Demo: Cetirizine 10mg — 5 left</span></div></div></div>
+    </div>
+    <div class="text-center mt-4"><a class="btn btn-emerald" href="dashboard.html">See it in the dashboard demo</a></div>
+  </div>
+</section>
+
+<section class="section-pad" id="pricing">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold text-navy">Simple pricing that grows with you</h2>
+      <div class="form-check form-switch d-inline-flex align-items-center gap-2 mt-2">
+        <span>Monthly</span><input class="form-check-input" type="checkbox" id="billingToggle"><span>Yearly <span class="badge bg-emerald">2 months free</span></span>
+      </div>
+    </div>
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-6 col-lg-3"><div class="price-card p-4"><h5 class="text-navy">Free Trial</h5><div class="price-amount" data-monthly="$0.00" data-yearly="$0.00">$0.00</div><div class="text-muted small billing-period">/ month</div><ul class="list-unstyled small mt-3"><li><i class="bi bi-check text-emerald"></i> 1 branch · 3 staff</li><li><i class="bi bi-check text-emerald"></i> 100 medicines</li><li><i class="bi bi-check text-emerald"></i> 100 sales / month</li></ul><a class="btn btn-outline-emerald w-100" href="dashboard.html">Start free</a></div></div>
+      <div class="col-md-6 col-lg-3"><div class="price-card p-4"><h5 class="text-navy">Starter</h5><div class="price-amount" data-monthly="$19.00" data-yearly="$190.00">$19.00</div><div class="text-muted small billing-period">/ month</div><ul class="list-unstyled small mt-3"><li><i class="bi bi-check text-emerald"></i> 1 branch · 5 staff</li><li><i class="bi bi-check text-emerald"></i> 500 medicines</li><li><i class="bi bi-check text-emerald"></i> 1,000 sales / month</li></ul><a class="btn btn-outline-emerald w-100" href="dashboard.html">Start free</a></div></div>
+      <div class="col-md-6 col-lg-3"><div class="price-card p-4 popular"><span class="badge bg-emerald mb-2">Most popular</span><h5 class="text-navy">Professional</h5><div class="price-amount" data-monthly="$49.00" data-yearly="$490.00">$49.00</div><div class="text-muted small billing-period">/ month</div><ul class="list-unstyled small mt-3"><li><i class="bi bi-check text-emerald"></i> 3 branches · 15 staff</li><li><i class="bi bi-check text-emerald"></i> 5,000 medicines</li><li><i class="bi bi-check text-emerald"></i> 5,000 sales / month</li></ul><a class="btn btn-emerald w-100" href="dashboard.html">Start free</a></div></div>
+      <div class="col-md-6 col-lg-3"><div class="price-card p-4"><h5 class="text-navy">Business</h5><div class="price-amount" data-monthly="$99.00" data-yearly="$990.00">$99.00</div><div class="text-muted small billing-period">/ month</div><ul class="list-unstyled small mt-3"><li><i class="bi bi-check text-emerald"></i> 10 branches · 40 staff</li><li><i class="bi bi-check text-emerald"></i> 20,000 medicines</li><li><i class="bi bi-check text-emerald"></i> 20,000 sales / month</li></ul><a class="btn btn-outline-emerald w-100" href="dashboard.html">Start free</a></div></div>
+    </div>
+    <p class="text-center text-muted small mt-3">Coupon <code>WELCOME10</code> takes 10% off your first paid plan. Payments are only marked successful after verified confirmation.</p>
+  </div>
+</section>
+
+<section class="section-pad section-alt">
+  <div class="container">
+    <div class="text-center mb-5"><h2 class="fw-bold text-navy">Pharmacists who switched, in their words</h2></div>
+    <div class="row g-4">
+      <div class="col-md-4"><div class="testimonial"><div class="text-warning mb-2"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div><p class="text-muted">“Expiry write-offs dropped to almost zero in the first quarter. FEFO alone paid for the subscription many times over.”</p><div class="d-flex align-items-center gap-2"><span class="avatar-circle">AK</span><div><strong class="text-navy d-block small">Ayesha Khan</strong><small class="text-muted">Owner, CityCare Pharmacy</small></div></div></div></div>
+      <div class="col-md-4"><div class="testimonial"><div class="text-warning mb-2"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div><p class="text-muted">“The POS is fast enough for our evening rush, and returns with refunds take under a minute. Audits are painless now.”</p><div class="d-flex align-items-center gap-2"><span class="avatar-circle">DO</span><div><strong class="text-navy d-block small">Daniel Otieno</strong><small class="text-muted">Manager, GreenCross Medical</small></div></div></div></div>
+      <div class="col-md-4"><div class="testimonial"><div class="text-warning mb-2"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div><p class="text-muted">“Three branches, one dashboard. Stock movements are fully traceable — I finally trust our inventory numbers.”</p><div class="d-flex align-items-center gap-2"><span class="avatar-circle">MS</span><div><strong class="text-navy d-block small">Maria Santos</strong><small class="text-muted">Director, PrimeCare Chain</small></div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section-pad">
+  <div class="container col-lg-8">
+    <h2 class="fw-bold text-navy text-center mb-4">Frequently asked questions</h2>
+    <div class="accordion" id="faq">
+      <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#f1">Can MediStock stop us selling expired medicines?</button></h2><div id="f1" class="accordion-collapse collapse show" data-bs-parent="#faq"><div class="accordion-body text-muted">Yes. Expiry is validated when a batch is added to a sale — expired batches are blocked at the POS, and the dashboard shows expiring stock up to 90 days ahead.</div></div></div>
+      <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f2">How does FEFO work?</button></h2><div id="f2" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted">When a medicine is added to a sale, MediStock suggests the batch with the earliest expiry date first (first-expiry-first-out), reducing waste from expired stock.</div></div></div>
+      <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f3">Can we run multiple branches?</button></h2><div id="f3" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted">Yes. Professional plans and above support multiple branches, each with its own stock, while owners see consolidated reports.</div></div></div>
+      <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f4">Is our data isolated from other pharmacies?</button></h2><div id="f4" class="accordion-collapse collapse" data-bs-parent="#faq"><div class="accordion-body text-muted">Completely. MediStock Cloud is multi-tenant: every record carries your pharmacy's tenant ID and every query is scoped to it.</div></div></div>
+    </div>
+    <div class="text-center mt-5">
+      <h3 class="fw-bold text-navy">Ready to modernise your pharmacy?</h3>
+      <a class="btn btn-emerald btn-lg mt-2" href="dashboard.html">Explore the demo dashboard</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container py-5">
+    <div class="row g-4">
+      <div class="col-md-5"><div class="brand text-white mb-2"><span class="brand-badge"><i class="bi bi-capsule"></i></span> MediStock <span style="color:#6ee7b7">Cloud</span></div>
+      <p class="text-white-50 small">The pharmacy management SaaS for independent pharmacies, medical stores, chains and distributors. This static demo mirrors the production UI; the full app is Core PHP 8 + MySQL.</p></div>
+      <div class="col-md-3"><h6 class="text-white">Demo</h6><ul class="footer-links"><li><a href="index.html">Landing page</a></li><li><a href="dashboard.html">Pharmacy dashboard</a></li><li><a href="pos.html">POS screen</a></li></ul></div>
+      <div class="col-md-4"><h6 class="text-white">Demo credentials (full app)</h6>
+      <p class="text-white-50 small mb-0">Super Admin: super@medistock.test<br>Pharmacy Admin: admin@demo.com<br>Pharmacist: pharmacist@demo.com · Cashier: cashier@demo.com<br>Password for all: <code class="text-white">password</code> · Coupon: <code class="text-white">WELCOME10</code></p></div>
+    </div>
+    <hr class="border-secondary">
+    <div class="d-flex flex-wrap justify-content-between text-white-50 small"><span>© 2026 MediStock Cloud. Demo build.</span><span>Core PHP 8 · MySQL · Bootstrap 5</span></div>
+  </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/demo.js"></script>
+</body>
+</html>

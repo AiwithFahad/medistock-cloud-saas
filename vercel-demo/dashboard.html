@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pharmacy Dashboard — MediStock Cloud Demo</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="assets/css/demo.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="admin-body">
+<div class="demo-banner"><i class="bi bi-info-circle"></i> Static demo with mock data — the production dashboard computes every figure from live MySQL queries. <a href="index.html">Back to landing</a></div>
+<div class="admin-wrapper">
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-brand"><span class="brand-badge"><i class="bi bi-capsule"></i></span> MediStock <span>Cloud</span></div>
+    <div class="sidebar-role">Pharmacy Admin · Demo</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="active"><i class="bi bi-speedometer2"></i> <span>Overview</span></a>
+      <a href="pos.html"><i class="bi bi-upc-scan"></i> <span>Pharmacy POS</span></a>
+      <a href="dashboard.html"><i class="bi bi-cart-check"></i> <span>Sales</span></a>
+      <a href="dashboard.html"><i class="bi bi-arrow-counterclockwise"></i> <span>Sales Returns</span></a>
+      <a href="dashboard.html"><i class="bi bi-capsule"></i> <span>Medicines</span></a>
+      <a href="dashboard.html"><i class="bi bi-box-seam"></i> <span>Batches</span></a>
+      <a href="dashboard.html"><i class="bi bi-boxes"></i> <span>Inventory</span></a>
+      <a href="dashboard.html"><i class="bi bi-calendar-x"></i> <span>Expiry Management</span></a>
+      <a href="dashboard.html"><i class="bi bi-exclamation-triangle"></i> <span>Low Stock Alerts</span></a>
+      <a href="dashboard.html"><i class="bi bi-bag-plus"></i> <span>Purchases</span></a>
+      <a href="dashboard.html"><i class="bi bi-truck"></i> <span>Suppliers</span></a>
+      <a href="dashboard.html"><i class="bi bi-graph-up"></i> <span>Reports &amp; Analytics</span></a>
+      <a href="dashboard.html"><i class="bi bi-stars"></i> <span>Subscription</span></a>
+      <a href="dashboard.html"><i class="bi bi-gear"></i> <span>Settings</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="index.html"><i class="bi bi-house"></i> <span>Back to site</span></a>
+      <a href="index.html"><i class="bi bi-box-arrow-right"></i> <span>Sign out</span></a>
+    </div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <button class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle" aria-label="Toggle sidebar"><i class="bi bi-list"></i></button>
+      <span class="fw-semibold text-navy d-none d-md-block"><i class="bi bi-search text-muted"></i> Search medicines, customers…</span>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <button class="btn btn-sm btn-light position-relative" type="button"><i class="bi bi-bell"></i><span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span></button>
+        <span class="d-flex align-items-center gap-2"><span class="avatar-circle">AA</span><span class="d-none d-md-inline text-start"><strong class="d-block small lh-1">Adam Admin</strong><small class="text-muted">admin@demo.com</small></span></span>
+      </div>
+    </header>
+    <main class="admin-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div><h3 class="mb-0 text-navy fw-bold">Demo Pharmacy</h3><small class="text-muted">Welcome back, Adam · Pharmacy Admin</small></div>
+        <div class="d-flex gap-2"><span class="badge bg-emerald align-self-center" style="background:#059669">Professional · Active</span><a class="btn btn-emerald" href="pos.html"><i class="bi bi-upc-scan"></i> Open POS</a></div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6"><div class="alert-strip danger"><i class="bi bi-calendar-x fs-4 text-danger"></i><div><strong>1 expired batch</strong> still holds stock (PCM-OLD, 40 units). It is blocked from sale — review and write it off. <a href="#expiry">Open expiry management</a></div></div></div>
+        <div class="col-md-6"><div class="alert-strip warning"><i class="bi bi-exclamation-triangle fs-4 text-warning"></i><div><strong>1 medicine at or below reorder level</strong> — Cetirizine 10mg (5 left, reorder at 20). <a href="#stock">View low-stock alerts</a></div></div></div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-xl-3"><div class="stat-card stat-emerald"><div class="stat-icon"><i class="bi bi-cash-coin"></i></div><div><div class="stat-value">$1,284.50</div><div class="stat-label">Today's Sales</div></div></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-sky"><div class="stat-icon"><i class="bi bi-calendar-month"></i></div><div><div class="stat-value">$18,940.00</div><div class="stat-label">Sales This Month</div></div></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-emerald"><div class="stat-icon"><i class="bi bi-capsule"></i></div><div><div class="stat-value">12</div><div class="stat-label">Medicines</div><div class="stat-sub">2,558 units in stock</div></div></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-amber"><div class="stat-icon"><i class="bi bi-boxes"></i></div><div><div class="stat-value">$4,318.90</div><div class="stat-label">Stock Value (cost)</div></div></div></div>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3"><div class="stat-card stat-amber"><div class="stat-icon"><i class="bi bi-calendar-x"></i></div><div><div class="stat-value">2</div><div class="stat-label">Expiring ≤ 90 days</div><div class="stat-sub">1 already expired</div></div></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-rose"><div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div><div><div class="stat-value">1</div><div class="stat-label">Low Stock</div></div></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-sky"><div class="stat-icon"><i class="bi bi-person-heart"></i></div><div><div class="stat-value">4</div><div class="stat-label">Customers</div></div></div></div>
+        <div class="col-6 col-xl-3"><div class="stat-card stat-emerald"><div class="stat-icon"><i class="bi bi-diagram-3"></i></div><div><div class="stat-value">2</div><div class="stat-label">Branches</div><div class="stat-sub">Plan limit: 3</div></div></div></div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-lg-8"><div class="card shadow-sm h-100"><div class="card-body">
+          <h6 class="fw-bold text-navy">Sales — last 14 days</h6>
+          <canvas id="salesChart" height="130"></canvas>
+        </div></div></div>
+        <div class="col-lg-4"><div class="card shadow-sm h-100"><div class="card-body">
+          <h6 class="fw-bold text-navy mb-3">Top medicines (units sold)</h6>
+          <div class="d-flex justify-content-between border-bottom py-2"><span>Paracetamol 500mg</span><span><strong>412</strong> · $618.00</span></div>
+          <div class="d-flex justify-content-between border-bottom py-2"><span>Vitamin D3 1000 IU</span><span><strong>186</strong> · $1,581.00</span></div>
+          <div class="d-flex justify-content-between border-bottom py-2"><span>Ibuprofen 400mg</span><span><strong>164</strong> · $688.80</span></div>
+          <div class="d-flex justify-content-between border-bottom py-2"><span>ORS Sachets</span><span><strong>150</strong> · $135.00</span></div>
+          <div class="d-flex justify-content-between py-2"><span>Metformin 500mg</span><span><strong>121</strong> · $338.80</span></div>
+        </div></div></div>
+      </div>
+
+      <div class="card shadow-sm mb-4" id="stock"><div class="card-body">
+        <h6 class="fw-bold text-navy mb-3"><i class="bi bi-boxes text-emerald"></i> Stock overview — batches &amp; FEFO order</h6>
+        <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Medicine</th><th>Batch</th><th>Supplier</th><th>Expiry</th><th class="text-end">Qty</th><th class="text-end">Sell price</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Paracetamol 500mg</td><td>PCM-2409</td><td>Nova Distributors</td><td><span class="badge bg-warning text-dark">in 55 days</span></td><td class="text-end">120</td><td class="text-end">$1.50</td><td><span class="badge bg-info-subtle text-info-emphasis">FEFO first</span></td></tr>
+            <tr><td>Paracetamol 500mg</td><td>PCM-2501</td><td>Nova Distributors</td><td>Mar 2028</td><td class="text-end">340</td><td class="text-end">$1.50</td><td><span class="badge bg-success">In stock</span></td></tr>
+            <tr><td>Paracetamol 500mg</td><td>PCM-OLD</td><td>HealthSource Ltd</td><td><span class="badge bg-danger">Expired</span></td><td class="text-end">40</td><td class="text-end">$1.50</td><td><span class="badge bg-danger">Sale blocked</span></td></tr>
+            <tr><td>Cetirizine 10mg</td><td>CET-077</td><td>HealthSource Ltd</td><td>Jul 2027</td><td class="text-end">5</td><td class="text-end">$2.25</td><td><span class="badge bg-warning text-dark">Low stock</span></td></tr>
+            <tr><td>Amoxicillin 250mg</td><td>AMX-118</td><td>Nova Distributors</td><td>May 2027</td><td class="text-end">150</td><td class="text-end">$5.00</td><td><span class="badge bg-success">In stock</span></td></tr>
+            <tr><td>Ambroxol Cough Syrup</td><td>AMB-033</td><td>HealthSource Ltd</td><td><span class="badge bg-warning text-dark">in 80 days</span></td><td class="text-end">48</td><td class="text-end">$4.95</td><td><span class="badge bg-success">In stock</span></td></tr>
+          </tbody></table></div>
+      </div></div>
+
+      <div class="card shadow-sm" id="expiry"><div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="fw-bold text-navy mb-0">Recent sales</h6><a class="small" href="pos.html">Open POS</a></div>
+        <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Invoice</th><th>Customer</th><th>Status</th><th class="text-end">Total</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td>SAL-DEMO-0001</td><td>Ahmed Raza</td><td><span class="badge bg-success">Completed</span></td><td class="text-end"><strong>$11.50</strong></td><td>Today</td></tr>
+            <tr><td>SAL-DEMO-0002</td><td>Walk-in</td><td><span class="badge bg-success">Completed</span></td><td class="text-end"><strong>$23.75</strong></td><td>Today</td></tr>
+            <tr><td>SAL-DEMO-0003</td><td>Sarah Mitchell</td><td><span class="badge bg-success">Completed</span></td><td class="text-end"><strong>$8.50</strong></td><td>Yesterday</td></tr>
+          </tbody></table></div>
+      </div></div>
+    </main>
+    <footer class="admin-footer px-3 pb-3 text-muted small">MediStock Cloud © 2026 · Static demo — figures are illustrative mock data in the production layout.</footer>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/demo.js"></script>
+<script>
+new Chart(document.getElementById('salesChart'), {type:'bar',
+  data:{labels:['26 Oct','27 Oct','28 Oct','29 Oct','30 Oct','31 Oct','1 Nov','2 Nov','3 Nov','4 Nov','5 Nov','6 Nov','7 Nov','8 Nov'],
+        datasets:[{label:'Sales', data:[820,940,760,1120,980,1240,1310,890,1030,1180,1090,1260,1150,1284], backgroundColor:'#059669', borderRadius:5}]},
+  options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}});
+</script>
+</body>
+</html>
